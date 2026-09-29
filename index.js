@@ -19,6 +19,10 @@ try {
 }
 
 app.use(express.json({ limit: '256kb' }));
+
+// ============================================================
+//  Static files (public folder)
+// ============================================================
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1y',
   immutable: true,
@@ -47,7 +51,6 @@ function cacheSet(key, value) {
   if (!CONFIG.cache?.enabled) return;
   const ttl = (CONFIG.cache.ttlSeconds || 300) * 1000;
   cache.set(key, { value, expires: Date.now() + ttl });
-  // Prune old entries
   if (cache.size > (CONFIG.cache.maxEntries || 200)) {
     const first = cache.keys().next().value;
     cache.delete(first);
@@ -79,7 +82,6 @@ function rateLimit(req, res, next) {
     return res.status(429).json({ success: false, error: 'Too many requests. Please wait a minute.' });
   }
 
-  // Prune occasionally
   if (rateBuckets.size > 500) {
     for (const [k, v] of rateBuckets) {
       if (now - v.start > windowMs) rateBuckets.delete(k);
@@ -89,11 +91,23 @@ function rateLimit(req, res, next) {
 }
 
 // ============================================================
-//  Pages
+//  Explicit page routes
 // ============================================================
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/downloader', (req, res) => res.sendFile(path.join(__dirname, 'public', 'downloader.html')));
+app.get('/', (req, res, next) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+    if (err) next(err);
+  });
+});
 
+app.get('/downloader', (req, res, next) => {
+  res.sendFile(path.join(__dirname, 'public', 'downloader.html'), (err) => {
+    if (err) next(err);
+  });
+});
+
+// ============================================================
+//  API routes
+// ============================================================
 app.get('/api/config', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.json({
@@ -115,11 +129,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ============================================================
-//  TikTok Downloader API
-//  GET /api/tiktok?url=<tiktok_url>
-// ============================================================
-app.get('/api/tiktok', rateLimit, async (req, res) => {
+app.get('/api/tiktok', rateLimit, async (req, res, next) => {
   const tiktokUrl = (req.query.url || '').trim();
 
   // --- Validation ---
@@ -229,18 +239,56 @@ function decodeHtml(str) {
 }
 
 // ============================================================
-//  Error pages
+//  404 handler — MUST come AFTER all routes
+//  Only sends 404.html for HTML requests; JSON for /api/*
 // ============================================================
-app.use((req, res) => res.status(404).sendFile(path.join(__dirname, 'public', '404.html')));
+app.use((req, res) => {
+  // API routes → JSON 404
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({
+      success: false,
+      error: 'API endpoint not found',
+      path: req.path,
+    });
+  }
+
+  // HTML pages → custom 404 page
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'), (err) => {
+    if (err) {
+      // Fallback if 404.html is missing
+      res.status(404).type('html').send('<h1>404 — Not Found</h1>');
+    }
+  });
+});
+
+// ============================================================
+//  500 handler — MUST be last, with 4 args
+// ============================================================
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).sendFile(path.join(__dirname, 'public', '500.html')));
+  console.error('Server error:', err.stack);
+
+  // API routes → JSON 500
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: err.message,
+    });
+  }
+
+  // HTML pages → custom 500 page
+  res.status(500).sendFile(path.join(__dirname, 'public', '500.html'), (sendErr) => {
+    if (sendErr) {
+      res.status(500).type('html').send('<h1>500 — Server Error</h1>');
+    }
+  });
 });
 
 // ============================================================
 //  Export for Vercel + local listen
 // ============================================================
 module.exports = app;
+
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`🎵 TikTok Downloader at http://localhost:${PORT}`));
