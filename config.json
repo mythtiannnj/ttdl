@@ -1,0 +1,26 @@
+{
+  "site": {
+    "name": "TikTok Downloader",
+    "tagline": "Download TikTok videos without watermark",
+    "version": "1.0.0",
+    "author": "Jr Busaco"
+  },
+  "ssstik": {
+    "endpoint": "https://ssstik.io/abc?url=dl",
+    "origin": "https://ssstik.io",
+    "referer": "https://ssstik.io/",
+    "ttToken": "YVJLR1Fi",
+    "locale": "en",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  "limits": {
+    "maxUrlLength": 2048,
+    "requestTimeoutMs": 25000,
+    "rateLimitPerMin": 20
+  },
+  "cache": {
+    "enabled": true,
+    "ttlSeconds": 300,
+    "maxEntries": 200
+  }
+}
