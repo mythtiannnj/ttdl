@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Downloader · TikTok Downloader</title>
+  <link rel="icon" href="/assets/img/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/themes.css" />
+  <link rel="stylesheet" href="/assets/css/ui.css" />
+  <style>
+    .input-wrap { position: relative; margin-bottom: 1rem; }
+    .input-wrap .input { padding-right: 6rem; }
+    .input-actions {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 0.25rem;
+    }
+    .input-actions button {
+      width: 30px; height: 30px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all var(--transition-fast);
+    }
+    .input-actions button:hover {
+      color: var(--accent-pink);
+      background: rgba(244, 114, 182, 0.08);
+    }
+
+    .examples {
+      display: flex; flex-wrap: wrap; gap: 0.4rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .chip:hover {
+      color: var(--accent-pink);
+      border-color: rgba(244, 114, 182, 0.45);
+      background: rgba(244, 114, 182, 0.08);
+    }
+
+    .result-card {
+      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      display: none;
+      animation: reveal 0.5s var(--transition) both;
+    }
+    .result-card.show { display: block; }
+
+    .result-head {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-avatar {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(244, 114, 182, 0.5);
+      box-shadow: 0 0 24px -6px rgba(244, 114, 182, 0.6);
+      display: none;
+      flex-shrink: 0;
+    }
+    .result-author {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 0.35rem;
+    }
+    .result-desc {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .result-stats {
+      display: flex;
+      gap: 1.2rem;
+      margin-bottom: 1.3rem;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+    .stat-item i { color: var(--accent-pink); font-size: 1rem; }
+    .stat-item b { color: var(--text); font-weight: 600; }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+    }
+    @media (max-width: 480px) { .download-grid { grid-template-columns: 1fr; } }
+
+    .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.9rem 1.2rem;
+      border-radius: 12px;
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+      text-decoration: none;
+    }
+    .dl-btn-video {
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      color: #0b0f19;
+      box-shadow: 0 12px 32px -12px rgba(244, 114, 182, 0.65);
+    }
+    .dl-btn-video:hover { transform: translateY(-2px); box-shadow: 0 18px 42px -12px rgba(244, 114, 182, 0.85); }
+    .dl-btn-mp3 {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      color: #0b0f19;
+      box-shadow: 0 12px 32px -12px rgba(34, 211, 238, 0.65);
+    }
+    .dl-btn-mp3:hover { transform: translateY(-2px); box-shadow: 0 18px 42px -12px rgba(34, 211, 238, 0.85); }
+
+    .empty-state, .error-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .empty-state i { font-size: 2.4rem; color: var(--text-muted); opacity: 0.5; }
+    .empty-state .label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .error-state i { font-size: 2rem; color: var(--accent-rose); }
+    .error-state .title {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-rose);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .error-state .msg {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      max-width: 400px;
+      line-height: 1.55;
+    }
+
+    .info-note {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      background: rgba(34, 211, 238, 0.06);
+      border: 1px solid rgba(34, 211, 238, 0.22);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+    .info-note i { color: var(--accent-cyan); flex-shrink: 0; margin-top: 2px; }
+
+    /* History */
+    .history-section { margin-top: 2rem; }
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.9rem;
+    }
+    .history-title {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .history-title::before {
+      content: '';
+      width: 20px; height: 1px;
+      background: var(--accent-pink);
+      box-shadow: 0 0 6px var(--accent-pink);
+    }
+    .history-clear {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.7rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .history-clear:hover {
+      color: var(--accent-rose);
+      border-color: rgba(251, 113, 133, 0.45);
+      background: rgba(251, 113, 133, 0.08);
+    }
+    .history-item {
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.65rem 0.75rem;
+      border-radius: 12px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .history-item:hover {
+      border-color: rgba(244, 114, 182, 0.35);
+      background: rgba(244, 114, 182, 0.05);
+    }
+    .history-thumb {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      background-color: var(--panel-strong);
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .history-body { flex: 1; min-width: 0; }
+    .history-author {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-desc {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-remove {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.3rem;
+      border-radius: 6px;
+      transition: all var(--transition-fast);
+    }
+    .history-remove:hover {
+      color: var(--accent-rose);
+      background: rgba(251, 113, 133, 0.1);
+    }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(11, 15, 25, 0.3);
+      border-top-color: #0b0f19;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="ambient">
+    <div class="blob blob-pink"></div>
+    <div class="blob blob-cyan"></div>
+    <div class="blob blob-purple"></div>
+  </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark"><i class="fab fa-tiktok"></i></span>
+      <div class="brand-text">TikTok Downloader <small>No Watermark</small></div>
+    </div>
+    <div class="topbar-right">
+      <div class="theme-toggle">
+        <button data-theme="dark" class="active"><i class="fas fa-circle-half-stroke"></i> Dark</button>
+        <button data-theme="glass"><i class="fas fa-droplet"></i> Glass</button>
+      </div>
+      <button class="icon-btn hamburger" id="hamburger-btn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path class="menu-line top-line" d="M4 6h16"/>
+          <path class="menu-line middle-line" d="M4 12h16"/>
+          <path class="menu-line bottom-line" d="M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="brand">
+        <span class="brand-mark"><i class="fab fa-tiktok"></i></span>
+        <div>
+          <h2>TikTok DL</h2>
+          <small>No Watermark</small>
+        </div>
+      </div>
+      <button class="icon-btn" id="drawer-close"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section-label">Navigation</div>
+      <nav class="drawer-nav">
+        <a href="/">
+          <span class="nav-icon"><i class="fas fa-house"></i></span>
+          <span class="nav-label">Home <small>Landing page</small></span>
+        </a>
+        <a href="/downloader" class="active">
+          <span class="nav-icon"><i class="fas fa-download"></i></span>
+          <span class="nav-label">Downloader <small>Paste & fetch</small></span>
+        </a>
+      </nav>
+    </div>
+    <div class="drawer-footer"><span class="status-dot"></span> ssstik.io · Online</div>
+  </aside>
+
+  <div class="main-shell">
+    <div class="container" style="max-width:760px;">
+      <h1 style="font-family:var(--font-serif);font-size:clamp(2rem,4vw,2.6rem);font-weight:600;letter-spacing:-0.02em;margin-bottom:0.4rem;">
+        <span class="brand-gradient-text">Fetch TikTok Video</span>
+      </h1>
+      <p style="color:var(--text-dim);font-size:0.9rem;margin-bottom:1.8rem;">
+        Paste a TikTok URL below to grab the video (no watermark) and audio.
+      </p>
+
+      <div class="info-note">
+        <i class="fas fa-circle-info"></i>
+        <span>Works with <b>tiktok.com</b>, <b>vm.tiktok.com</b>, <b>vt.tiktok.com</b> share links. Public videos only.</span>
+      </div>
+
+      <div class="input-wrap">
+        <input type="text" class="input" id="tiktok-url" placeholder="https://www.tiktok.com/@user/video/1234567890" autocomplete="off" />
+        <div class="input-actions">
+          <button id="paste-btn" title="Paste from clipboard"><i class="fas fa-paste"></i></button>
+          <button id="clear-url" title="Clear"><i class="fas fa-xmark"></i></button>
+        </div>
+      </div>
+
+      <div class="examples">
+        <span style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);">Try:</span>
+        <button class="chip" data-example="https://www.tiktok.com/@tiktok/video/7106594312292453675">TikTok Official</button>
+        <button class="chip" data-example="https://www.tiktok.com/@nasa/video/7146396518642867502">NASA</button>
+      </div>
+
+      <button id="fetch-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:1.5rem;">
+        <span class="spinner" id="fetch-spinner"></span>
+        <i class="fas fa-bolt"></i>
+        <span id="fetch-label">Fetch Video</span>
+      </button>
+
+      <!-- Empty -->
+      <div class="empty-state glass" id="empty-state">
+        <i class="fab fa-tiktok"></i>
+        <div class="label">Awaiting URL</div>
+      </div>
+
+      <!-- Error -->
+      <div class="error-state glass" id="error-state" style="display:none;">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div class="title">Failed</div>
+        <div class="msg" id="error-message"></div>
+      </div>
+
+      <!-- Result -->
+      <div class="result-card glass" id="result">
+        <div class="result-head">
+          <img class="result-avatar" id="r-avatar" alt="" />
+          <div style="flex:1;min-width:0;">
+            <div class="result-author" id="r-author">—</div>
+            <div class="result-desc" id="r-description">—</div>
+          </div>
+        </div>
+
+        <div class="result-stats">
+          <div class="stat-item">
+            <i class="fas fa-heart"></i>
+            <span>Likes: <b id="r-likes">0</b></span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-comment"></i>
+            <span>Comments: <b id="r-comments">0</b></span>
+          </div>
+        </div>
+
+        <div class="download-grid">
+          <a class="dl-btn dl-btn-video" id="r-dl-video" href="#" target="_blank" rel="noopener" style="display:none;">
+            <i class="fas fa-video"></i> Video (MP4)
+          </a>
+          <a class="dl-btn dl-btn-mp3" id="r-dl-mp3" href="#" target="_blank" rel="noopener" style="display:none;">
+            <i class="fas fa-music"></i> Audio (MP3)
+          </a>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="history-section" id="history-section" style="display:none;">
+        <div class="history-head">
+          <div class="history-title">Recent History</div>
+          <button class="history-clear" id="clear-history">Clear all</button>
+        </div>
+        <div id="history-list"></div>
+      </div>
+
+      <footer>
+        <p>© 2025 TikTok Downloader · Built by <strong>Jr Busaco</strong></p>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/js/theme.js"></script>
+  <script src="/assets/js/menu.js"></script>
+  <script src="/assets/js/storage.js"></script>
+  <script src="/assets/js/downloader.js"></script>
+</body>
+</html>
